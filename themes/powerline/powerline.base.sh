@@ -70,7 +70,13 @@ function __powerline_scm_prompt {
   local scm_prompt=""
 
   scm_prompt_vars
+  
+  IFS="-" read -ra BRANCH <<< ${SCM_BRANCH}
 
+  if [[ ${#BRANCH[@]} -ge 4 ]]; then
+    SCM_BRANCH="${BRANCH[0]}-${BRANCH[1]}-[..]-${BRANCH[${#BRANCH[@]}-1]}"
+  fi
+  
   if [[ "${SCM_NONE_CHAR}" != "${SCM_CHAR}" ]]; then
     if [[ "${SCM_DIRTY}" -eq 3 ]]; then
       color=${SCM_THEME_PROMPT_STAGED_COLOR}
@@ -89,7 +95,19 @@ function __powerline_scm_prompt {
 }
 
 function __powerline_cwd_prompt {
-  echo "$(pwd | sed "s|^${HOME}|~|")|${CWD_THEME_PROMPT_COLOR}"
+  
+  dir="$(pwd | sed "s|^${HOME}|~|")"
+
+  IFS="/" read -ra PARTS <<< "$dir"
+
+  length=${#PARTS[@]}
+
+  if [[ $length -ge 5 ]]; then
+    echo "${PARTS[0]}/${PARTS[1]}/[..]/${PARTS[$length-1]}|${CWD_THEME_PROMPT_COLOR}"
+  else
+    echo "$dir|${CWD_THEME_PROMPT_COLOR}"
+  fi
+  
 }
 
 function __powerline_clock_prompt {
@@ -161,7 +179,7 @@ function __powerline_prompt_command {
   [[ "${last_status}" -ne 0 ]] && __powerline_left_segment $(__powerline_last_status_prompt ${last_status})
   [[ -n "${LEFT_PROMPT}" ]] && LEFT_PROMPT+="$(set_color ${LAST_SEGMENT_COLOR} -)${separator_char}${normal}"
 
-  PS1="${LEFT_PROMPT} "
+  PS1="${LEFT_PROMPT}\n ❯ "
 
   ## cleanup ##
   unset LAST_SEGMENT_COLOR \
